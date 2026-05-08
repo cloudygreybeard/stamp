@@ -191,7 +191,7 @@ func runConfigCreate(cmd *cobra.Command, args []string) error {
 	if err := saveConfig(path, cfg); err != nil {
 		return err
 	}
-	fmt.Fprintf(os.Stdout, "Created preset %q\n", args[0])
+	_, _ = fmt.Fprintf(os.Stdout, "Created preset %q\n", args[0])
 	return nil
 }
 
@@ -209,7 +209,7 @@ func runConfigEdit(cmd *cobra.Command, args []string) error {
 	if err := saveConfig(path, cfg); err != nil {
 		return err
 	}
-	fmt.Fprintf(os.Stdout, "Updated preset %q\n", args[0])
+	_, _ = fmt.Fprintf(os.Stdout, "Updated preset %q\n", args[0])
 	return nil
 }
 
@@ -226,7 +226,7 @@ func runConfigDelete(_ *cobra.Command, args []string) error {
 	if err := saveConfig(path, cfg); err != nil {
 		return err
 	}
-	fmt.Fprintf(os.Stdout, "Deleted preset %q\n", args[0])
+	_, _ = fmt.Fprintf(os.Stdout, "Deleted preset %q\n", args[0])
 	return nil
 }
 
@@ -243,7 +243,7 @@ func runConfigUseDefault(_ *cobra.Command, args []string) error {
 	if err := saveConfig(path, cfg); err != nil {
 		return err
 	}
-	fmt.Fprintf(os.Stdout, "Default preset set to %q\n", args[0])
+	_, _ = fmt.Fprintf(os.Stdout, "Default preset set to %q\n", args[0])
 	return nil
 }
 
