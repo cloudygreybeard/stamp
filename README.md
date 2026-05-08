@@ -427,7 +427,7 @@ files are printed to stdout.
 
 ## Development
 
-Prerequisites: Go 1.24+, [golangci-lint](https://golangci-lint.run/)
+Prerequisites: Go 1.25+, [golangci-lint](https://golangci-lint.run/)
 (for linting).
 
 ```bash

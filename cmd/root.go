@@ -211,7 +211,7 @@ func readFileList(path string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 	return scanLines(f)
 }
 
@@ -347,7 +347,7 @@ func runStamp(cmd *cobra.Command, args []string) error {
 			errCount++
 			continue
 		}
-		fmt.Fprintf(os.Stdout, "%s: %s -> %s\n", verb, r.res.Original, r.res.Stamped)
+		_, _ = fmt.Fprintf(os.Stdout, "%s: %s -> %s\n", verb, r.res.Original, r.res.Stamped)
 	}
 
 	if errCount > 0 {
