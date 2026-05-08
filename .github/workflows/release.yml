@@ -1,0 +1,120 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-homebrew-tap:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout homebrew-tap
+        uses: actions/checkout@v4
+        with:
+          repository: cloudygreybeard/homebrew-tap
+          ssh-key: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
+          path: homebrew-tap
+
+      - name: Get release version
+        id: release
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Download checksums
+        id: checksums
+        run: |
+          VERSION=${{ steps.release.outputs.version }}
+
+          # Wait for release assets to be available
+          sleep 10
+
+          curl -fsSL "https://github.com/cloudygreybeard/stamp/releases/download/v${VERSION}/checksums.txt" -o checksums.txt
+
+          echo "darwin_amd64_sha=$(grep "stamp_${VERSION}_darwin_amd64.tar.gz" checksums.txt | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "darwin_arm64_sha=$(grep "stamp_${VERSION}_darwin_arm64.tar.gz" checksums.txt | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "linux_amd64_sha=$(grep "stamp_${VERSION}_linux_amd64.tar.gz" checksums.txt | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "linux_arm64_sha=$(grep "stamp_${VERSION}_linux_arm64.tar.gz" checksums.txt | awk '{print $1}')" >> $GITHUB_OUTPUT
+
+      - name: Update formula
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          DARWIN_AMD64_SHA: ${{ steps.checksums.outputs.darwin_amd64_sha }}
+          DARWIN_ARM64_SHA: ${{ steps.checksums.outputs.darwin_arm64_sha }}
+          LINUX_AMD64_SHA: ${{ steps.checksums.outputs.linux_amd64_sha }}
+          LINUX_ARM64_SHA: ${{ steps.checksums.outputs.linux_arm64_sha }}
+        run: |
+          cat > homebrew-tap/Formula/stamp.rb << FORMULA
+          class Stamp < Formula
+            desc "Insert timestamps into filenames by renaming or copying"
+            homepage "https://github.com/cloudygreybeard/stamp"
+            version "${VERSION}"
+            license "Apache-2.0"
+
+            on_macos do
+              on_intel do
+                url "https://github.com/cloudygreybeard/stamp/releases/download/v#{version}/stamp_#{version}_darwin_amd64.tar.gz"
+                sha256 "${DARWIN_AMD64_SHA}"
+              end
+              on_arm do
+                url "https://github.com/cloudygreybeard/stamp/releases/download/v#{version}/stamp_#{version}_darwin_arm64.tar.gz"
+                sha256 "${DARWIN_ARM64_SHA}"
+              end
+            end
+
+            on_linux do
+              on_intel do
+                url "https://github.com/cloudygreybeard/stamp/releases/download/v#{version}/stamp_#{version}_linux_amd64.tar.gz"
+                sha256 "${LINUX_AMD64_SHA}"
+              end
+              on_arm do
+                url "https://github.com/cloudygreybeard/stamp/releases/download/v#{version}/stamp_#{version}_linux_arm64.tar.gz"
+                sha256 "${LINUX_ARM64_SHA}"
+              end
+            end
+
+            def install
+              bin.install "stamp"
+            end
+
+            test do
+              assert_match version.to_s, shell_output("#{bin}/stamp version")
+            end
+          end
+          FORMULA
+
+      - name: Commit and push formula
+        run: |
+          cd homebrew-tap
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add Formula/stamp.rb
+          git commit -m "stamp: update to v${{ steps.release.outputs.version }}"
+          git push
