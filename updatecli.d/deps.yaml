@@ -1,0 +1,29 @@
+name: Dependency updates
+
+scms:
+  default:
+    kind: github
+    spec:
+      owner: cloudygreybeard
+      repository: stamp
+      token: '{{ requiredEnv "GITHUB_TOKEN" }}'
+      username: x-access-token
+      branch: main
+
+actions:
+  default:
+    kind: github/pullrequest
+    scmid: default
+    spec:
+      labels:
+        - dependencies
+        - automated
+
+autodiscovery:
+  scmid: default
+  actionid: default
+  crawlers:
+    golang:
+      versionfilter:
+        kind: semver
+    githubaction: {}
