@@ -215,9 +215,9 @@ func Save(path string, cfg *Config) error {
 // rawConfig mirrors Config but also captures the legacy profiles: key for
 // backward-compatible loading.
 type rawConfig struct {
-	Default  string                   `yaml:"default,omitempty"`
-	Presets  []Preset                 `yaml:"presets,omitempty"`
-	Profiles map[string]legacyPreset  `yaml:"profiles,omitempty"`
+	Default  string                  `yaml:"default,omitempty"`
+	Presets  []Preset                `yaml:"presets,omitempty"`
+	Profiles map[string]legacyPreset `yaml:"profiles,omitempty"`
 }
 
 // legacyPreset captures the old profile format which included a placement
