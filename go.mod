@@ -2,8 +2,6 @@ module github.com/cloudygreybeard/stamp
 
 go 1.26.5
 
-toolchain go1.25.8
-
 require (
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
